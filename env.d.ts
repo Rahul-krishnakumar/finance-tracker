@@ -4,6 +4,7 @@
 interface ImportMetaEnv {
   readonly GOOGLE_SERVICE_ACCOUNT_EMAIL: string;
   readonly GOOGLE_PRIVATE_KEY: string;
+  readonly GOOGLE_DRIVE_FOLDER_ID: string;
   readonly SHEET_ID: string;
 }
 

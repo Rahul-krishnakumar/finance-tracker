@@ -13,6 +13,8 @@
   },
   "dependencies": {
     "astro": "^6.1.7",
+    "chart.js": "^4.5.1",
+    "dayjs": "^1.11.20",
     "google-auth-library": "^10.6.2",
     "googleapis": "^171.4.0"
   },

@@ -1,4 +1,4 @@
-import type { GoogleSheetConfig } from "../types/GooglesheetConfig";
+import type { GoogleSheetConfig } from "../types/GoogleSheetConfig";
 
 export const googleSheetConfig: GoogleSheetConfig = {
   expense: {
@@ -15,4 +15,5 @@ export const googleSheetConfig: GoogleSheetConfig = {
   },
   headers: ["date", "amount", "description", "category"],
   sheetName: "Transactions",
+  batchSize: 5,
 };
