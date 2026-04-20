@@ -1,7 +1,8 @@
+import crypto from "node:crypto";
 import { JWT } from "google-auth-library";
 import { drive_v3, google } from "googleapis";
 import { googleSheetConfig } from "../config/googleSheet.config";
-import type { Transaction } from "../types/Transaction";
+import { TransactionType, type Transaction } from "../types/Transaction";
 
 const scopes = [
   "https://www.googleapis.com/auth/spreadsheets.readonly",
@@ -24,7 +25,7 @@ const sheets = google.sheets({
   auth: client,
 });
 
-export const getExpenseData = async () => {
+export const getExpenseData = async (): Promise<Transaction[]> => {
   const files = (
     await drive.files.list({
       q: `'${import.meta.env.GOOGLE_DRIVE_FOLDER_ID}' in parents and mimeType = 'application/vnd.google-apps.spreadsheet'`,
@@ -32,24 +33,13 @@ export const getExpenseData = async () => {
   ).data.files;
 
   if (!files) {
-    return { expenseData: [], incomeData: [] };
+    return [];
   }
 
   const filePromises = files.map((file) => () => extractSheetData(file.id));
   const results = await batchApiCalls(filePromises);
 
-  const totalExpenseData = results
-    .flatMap((result) => result.expenseData)
-    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-
-  const totalIncomeData = results
-    .flatMap((result) => result.incomeData)
-    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-
-  return {
-    expenseData: totalExpenseData,
-    incomeData: totalIncomeData,
-  };
+  return results.flat();
 };
 
 const batchApiCalls = async <T>(
@@ -66,7 +56,7 @@ const batchApiCalls = async <T>(
         }
         // TODO: Add proper logging for the application
         console.error("Error fetching data from Google Sheets:", result.reason);
-        return { expenseData: [], incomeData: [] } as unknown as T;
+        return [] as T;
       }),
     );
 
@@ -80,7 +70,7 @@ const batchApiCalls = async <T>(
 
 const extractSheetData = async (spreadsheetId?: string | null) => {
   if (!spreadsheetId) {
-    return { expenseData: [], incomeData: [] };
+    return [];
   }
 
   const expenseRange = `${googleSheetConfig.sheetName}!${googleSheetConfig.expense.startingColumn}${googleSheetConfig.expense.startingRow}:${googleSheetConfig.expense.endingColumn}${googleSheetConfig.expense.endingRow}`;
@@ -98,25 +88,35 @@ const extractSheetData = async (spreadsheetId?: string | null) => {
   const incomeValues = response.data.valueRanges?.[1].values || [];
 
   incomeValues.forEach((row) => {
-    const transaction = parseTransaction(row);
+    const transaction = parseTransaction(row, TransactionType.INCOME);
     incomeData.push(transaction);
   });
 
   expenseValues.forEach((row) => {
-    const transaction = parseTransaction(row);
+    const transaction = parseTransaction(row, TransactionType.EXPENSE);
     expenseData.push(transaction);
   });
 
-  return {
-    expenseData,
-    incomeData,
-  };
+  return incomeData.concat(expenseData).sort((a, b) => {
+    return new Date(b.date).getTime() - new Date(a.date).getTime();
+  });
 };
 
-const parseTransaction = (row: string[]) => {
-  const transaction = {} as Transaction;
+const parseTransaction = (
+  row: string[],
+  transactionType: TransactionType,
+): Transaction => {
+  const transaction: Partial<Transaction> = {
+    id: crypto.randomUUID(),
+    type: transactionType,
+  };
+
   row.forEach((cell, i) => {
-    transaction[googleSheetConfig.headers[i] as keyof Transaction] = cell;
+    const field = googleSheetConfig.fields[i];
+    if (field) {
+      transaction[field] = cell;
+    }
   });
-  return transaction;
+
+  return transaction as Transaction;
 };

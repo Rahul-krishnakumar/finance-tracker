@@ -1,7 +1,9 @@
+import type { TransactionSheetField } from "./Transaction";
+
 export interface GoogleSheetConfig {
   expense: DataRange;
   income: DataRange;
-  headers: string[];
+  fields: TransactionSheetField[];
   sheetName: string;
   batchSize: number;
 }

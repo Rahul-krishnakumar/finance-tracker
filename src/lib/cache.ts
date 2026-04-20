@@ -7,7 +7,7 @@ const TTL = 24 * 60 * 60 * 1000; // 24 hours
 export async function getCachedData<T>(
   fetcher: () => Promise<T>,
   invalidateCache: boolean = false,
-) {
+): Promise<T> {
   try {
     const stats = await stat(CACHE_PATH).catch(() => null);
 

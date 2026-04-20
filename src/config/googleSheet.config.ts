@@ -13,7 +13,7 @@ export const googleSheetConfig: GoogleSheetConfig = {
     endingRow: "",
     endingColumn: "J",
   },
-  headers: ["date", "amount", "description", "category"],
+  fields: ["date", "amount", "description", "category"],
   sheetName: "Transactions",
   batchSize: 5,
 };

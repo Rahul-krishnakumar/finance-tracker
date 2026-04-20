@@ -2,39 +2,20 @@
 import Layout from "../layouts/Layout.astro";
 import { getExpenseData } from "../lib/googleSheets";
 import { getCachedData } from "../lib/cache";
+import type { Transaction } from "../types/Transaction";
+import TransactionTable from "../components/TransactionTable.svelte";
 
-const { expenseData } = await getCachedData(getExpenseData);
-
-// Welcome to Astro! Wondering what to do next? Check out the Astro documentation at https://docs.astro.build
-// Don't want to use any of this? Delete everything in this file, the `assets`, `components`, and `layouts` directories, and start fresh.
+const expenseData = await getCachedData<Transaction>(getExpenseData);
 ---
 
 <Layout>
-  <body>
+  <style>
+    table {
+      border-width: 2px;
+    }
+  </style>
+  <main>
     <h1>Finance Tracker</h1>
-    <p>Total Transactions: {expenseData.length}</p>
-
-    <table border="1">
-      <thead>
-        <tr>
-          <th>Date</th>
-          <th>Amount</th>
-          <th>Description</th>
-          <th>Category</th>
-        </tr>
-      </thead>
-      <tbody>
-        {
-          expenseData.map((item) => (
-            <tr>
-              <td>{item.date}</td>
-              <td>{item.amount}</td>
-              <td>{item.description}</td>
-              <td>{item.category}</td>
-            </tr>
-          ))
-        }
-      </tbody>
-    </table>
-  </body>
+    <TransactionTable transactions={expenseData} client:load />
+  </main>
 </Layout>
