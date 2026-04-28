@@ -1,21 +1,56 @@
 ---
 import Layout from "../layouts/Layout.astro";
-import { getExpenseData } from "../lib/googleSheets";
-import { getCachedData } from "../lib/cache";
-import type { Transaction } from "../types/Transaction";
 import TransactionTable from "../components/TransactionTable.svelte";
+import SummaryCard from "../components/SummaryCard.astro";
+import { db, Transaction, sql, Configuration, eq } from "astro:db";
+import { roundCurrency } from "../lib/utils";
+import { IndianRupee, TrendingUp, TrendingDown } from "@lucide/svelte";
 
-const expenseData = await getCachedData<Transaction>(getExpenseData);
+const transactions = await db.select().from(Transaction);
+
+const stats = await db
+  .select({
+    income: sql`SUM(CASE WHEN type = 'income' THEN amount ELSE 0 END)`,
+    expense: sql`SUM(CASE WHEN type = 'expense' THEN amount ELSE 0 END)`,
+  })
+  .from(Transaction);
+
+const config = await db
+  .select()
+  .from(Configuration)
+  .where(eq(Configuration.key, "opening-balance"));
+
+const { income, expense } = stats[0];
+const openingBalance = Number(config[0].value);
+const balance = roundCurrency(openingBalance + income - expense);
 ---
 
 <Layout>
-  <style>
-    table {
-      border-width: 2px;
-    }
-  </style>
   <main>
     <h1>Finance Tracker</h1>
-    <TransactionTable transactions={expenseData} client:load />
+    <div class="summary">
+      <SummaryCard title="Income" content={income}>
+        <TrendingUp color="var(--pico-color-green-500)" size={16} slot="icon" />
+      </SummaryCard>
+      <SummaryCard title="Expense" content={expense}>
+        <TrendingDown color="var(--pico-color-red-500)" size={16} slot="icon" />
+      </SummaryCard>
+      <SummaryCard title="Balance" content={balance}>
+        <IndianRupee color="var(--pico-primary)" size={16} slot="icon" />
+      </SummaryCard>
+    </div>
+    <TransactionTable transactions={transactions} client:only="svelte" />
   </main>
 </Layout>
+
+<style>
+  .summary {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+
+    article {
+      flex: 1;
+    }
+  }
+</style>

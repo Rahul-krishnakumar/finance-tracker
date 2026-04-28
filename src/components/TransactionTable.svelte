@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { formatDate } from "../lib/utils";
   import { TransactionType, type Transaction } from "../types/Transaction";
   import {
     ArrowDown,
@@ -40,17 +41,19 @@
   <tbody>
     {#each paginatedTransactions as transaction}
       <tr>
-        <td>{transaction.date}</td>
+        <td>{formatDate(transaction.date)}</td>
         <td>{transaction.description}</td>
         <td>{transaction.category}</td>
-        <td class="transaction-amount">
-          {#if transaction.type === TransactionType.EXPENSE}
-            <span class="expense"><ArrowDown size={16} /></span>
-          {:else}
-            <span class="income"><ArrowUp size={16} /></span>
-          {/if}
-          <span>{transaction.amount}</span></td
-        >
+        <td>
+          <div class="transaction-amount">
+            {#if transaction.type === TransactionType.EXPENSE}
+              <span class="expense"><ArrowDown size={16} /></span>
+            {:else}
+              <span class="income"><ArrowUp size={16} /></span>
+            {/if}
+            <span>{transaction.amount}</span>
+          </div>
+        </td>
       </tr>
     {/each}
   </tbody>
