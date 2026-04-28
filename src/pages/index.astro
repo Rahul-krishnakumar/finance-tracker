@@ -2,9 +2,10 @@
 import Layout from "../layouts/Layout.astro";
 import TransactionTable from "../components/TransactionTable.svelte";
 import SummaryCard from "../components/SummaryCard.astro";
+
 import { db, Transaction, sql, Configuration, eq } from "astro:db";
-import { roundCurrency } from "../lib/utils";
 import { IndianRupee, TrendingUp, TrendingDown } from "@lucide/svelte";
+import { roundCurrency } from "../lib/utils";
 
 const transactions = await db.select().from(Transaction);
 

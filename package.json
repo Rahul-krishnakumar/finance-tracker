@@ -19,6 +19,7 @@
     "@picocss/pico": "^2.1.1",
     "astro": "^6.1.7",
     "dayjs": "^1.11.20",
+    "echarts": "^6.0.0",
     "google-auth-library": "^10.6.2",
     "googleapis": "^171.4.0",
     "svelte": "^5.55.4",
