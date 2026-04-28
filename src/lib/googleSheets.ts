@@ -1,8 +1,10 @@
 import crypto from "node:crypto";
 import { JWT } from "google-auth-library";
-import { drive_v3, google } from "googleapis";
+import { google } from "googleapis";
 import { googleSheetConfig } from "../config/googleSheet.config";
 import { TransactionType, type Transaction } from "../types/Transaction";
+import { getEnv } from "./utils";
+import dayjs from "./dayjs";
 
 const scopes = [
   "https://www.googleapis.com/auth/spreadsheets.readonly",
@@ -10,8 +12,8 @@ const scopes = [
 ];
 
 const client = new JWT({
-  email: import.meta.env.GOOGLE_SERVICE_ACCOUNT_EMAIL,
-  key: import.meta.env.GOOGLE_PRIVATE_KEY,
+  email: getEnv("GOOGLE_SERVICE_ACCOUNT_EMAIL"),
+  key: getEnv("GOOGLE_PRIVATE_KEY"),
   scopes,
 });
 
@@ -25,10 +27,10 @@ const sheets = google.sheets({
   auth: client,
 });
 
-export const getExpenseData = async (): Promise<Transaction[]> => {
+export async function getTransactionData(): Promise<Transaction[]> {
   const files = (
     await drive.files.list({
-      q: `'${import.meta.env.GOOGLE_DRIVE_FOLDER_ID}' in parents and mimeType = 'application/vnd.google-apps.spreadsheet'`,
+      q: `'${getEnv("GOOGLE_DRIVE_FOLDER_ID")}' in parents and mimeType = 'application/vnd.google-apps.spreadsheet'`,
     })
   ).data.files;
 
@@ -39,36 +41,74 @@ export const getExpenseData = async (): Promise<Transaction[]> => {
   const filePromises = files.map((file) => () => extractSheetData(file.id));
   const results = await batchApiCalls(filePromises);
 
-  return results.flat();
-};
+  return results.flat().sort((a, b) => {
+    return dayjs(b.date).diff(dayjs(a.date));
+  });
+}
 
-const batchApiCalls = async <T>(
+async function withRetry<T>(
+  fn: () => Promise<T>,
+  maxRetries: number = 3,
+): Promise<T> {
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      return await fn();
+    } catch (error: any) {
+      const isRateLimited =
+        error?.code === 429 ||
+        error?.response?.status === 429 ||
+        error?.message?.includes("Quota exceeded");
+
+      if (!isRateLimited || attempt === maxRetries) {
+        throw error;
+      }
+
+      // Exponential backoff: 10s, 20s, 40s
+      // TODO: explore replacing this with ky or some other library
+      const backoff = 10000 * Math.pow(2, attempt);
+      console.warn(
+        `Rate limited, retrying in ${backoff / 1000}s (attempt ${attempt + 1}/${maxRetries})...`,
+      );
+      await new Promise((resolve) => setTimeout(resolve, backoff));
+    }
+  }
+  throw new Error("Unreachable");
+}
+
+async function batchApiCalls<T>(
   calls: (() => Promise<T>)[],
   batchSize: number = googleSheetConfig.batchSize,
-): Promise<T[]> => {
+): Promise<T[]> {
   const results: T[][] = [];
   for (let i = 0; i < calls.length; i += batchSize) {
     const batch = calls.slice(i, i + batchSize);
     results.push(
-      (await Promise.allSettled(batch.map((call) => call()))).map((result) => {
-        if (result.status === "fulfilled") {
-          return result.value;
-        }
-        // TODO: Add proper logging for the application
-        console.error("Error fetching data from Google Sheets:", result.reason);
-        return [] as T;
-      }),
+      (await Promise.allSettled(batch.map((call) => withRetry(call)))).map(
+        (result) => {
+          if (result.status === "fulfilled") {
+            return result.value;
+          }
+          // TODO: Add proper logging for the application
+          console.error(
+            "Error fetching data from Google Sheets:",
+            result.reason,
+          );
+          return [] as T;
+        },
+      ),
     );
 
-    // Add a delay between batches to respect the 60 requests/min rate limit
+    // Delay between batches to respect the 60 read requests/min rate limit.
+    // With batchSize=5, we need at least 5s between batches (5 reqs / 1 req-per-sec).
+    // Using 6s for safety margin.
     if (i + batchSize < calls.length) {
-      await new Promise((resolve) => setTimeout(resolve, 10000));
+      await new Promise((resolve) => setTimeout(resolve, 6000));
     }
   }
   return results.flat();
-};
+}
 
-const extractSheetData = async (spreadsheetId?: string | null) => {
+async function extractSheetData(spreadsheetId?: string | null) {
   if (!spreadsheetId) {
     return [];
   }
@@ -97,10 +137,8 @@ const extractSheetData = async (spreadsheetId?: string | null) => {
     expenseData.push(transaction);
   });
 
-  return incomeData.concat(expenseData).sort((a, b) => {
-    return new Date(b.date).getTime() - new Date(a.date).getTime();
-  });
-};
+  return incomeData.concat(expenseData);
+}
 
 const parseTransaction = (
   row: string[],

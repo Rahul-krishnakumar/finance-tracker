@@ -9,11 +9,13 @@
     "dev": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
-    "astro": "astro"
+    "astro": "astro",
+    "fetch-sheets": "bun run scripts/fetch-sheets.ts"
   },
   "dependencies": {
+    "@astrojs/db": "^0.20.1",
     "@astrojs/svelte": "^8.0.5",
-    "@lucide/svelte": "^1.8.0",
+    "@lucide/svelte": "^1.11.0",
     "@picocss/pico": "^2.1.1",
     "astro": "^6.1.7",
     "dayjs": "^1.11.20",
