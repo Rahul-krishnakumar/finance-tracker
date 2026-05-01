@@ -5,6 +5,7 @@ import { db } from "astro:db";
 import { asDrizzleTable } from "@astrojs/db/utils";
 import type { Transaction as TransactionType } from "../src/types/Transaction";
 import dayjs from "../src/lib/dayjs";
+import { getEnv } from "../src/lib/utils";
 
 const PREFETCH_PATH = path.join(
   process.cwd(),
@@ -81,7 +82,7 @@ export default async function seed() {
    */
   await db.insert(ConfigurationTable).values({
     key: "opening-balance",
-    value: "81413.96",
+    value: getEnv("OPENING_BALANCE", "0.00"),
   });
 
   console.log(

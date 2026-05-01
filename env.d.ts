@@ -6,6 +6,7 @@ interface ImportMetaEnv {
   readonly GOOGLE_PRIVATE_KEY: string;
   readonly GOOGLE_DRIVE_FOLDER_ID: string;
   readonly SHEET_ID: string;
+  readonly OPENING_BALANCE: string;
 }
 
 interface ImportMeta {
