@@ -1,11 +1,12 @@
 ---
 import Layout from "../layouts/Layout.astro";
-import TransactionTable from "../components/TransactionTable.svelte";
 import SummaryCard from "../components/SummaryCard.astro";
+import CategoryChart from "../components/charts/CategoryChart.svelte";
+import TransactionTable from "../components/TransactionTable.svelte";
 
 import { db, Transaction, sql, Configuration, eq } from "astro:db";
 import { IndianRupee, TrendingUp, TrendingDown } from "@lucide/svelte";
-import { roundCurrency } from "../lib/utils";
+import { formatCurrency, roundCurrency } from "../lib/utils";
 
 const transactions = await db.select().from(Transaction);
 
@@ -22,7 +23,7 @@ const config = await db
   .where(eq(Configuration.key, "opening-balance"));
 
 const { income, expense } = stats[0];
-const openingBalance = Number(config[0].value);
+const openingBalance = Number(config[0]?.value ?? 0);
 const balance = roundCurrency(openingBalance + income - expense);
 ---
 
@@ -30,16 +31,17 @@ const balance = roundCurrency(openingBalance + income - expense);
   <main>
     <h1>Finance Tracker</h1>
     <div class="summary">
-      <SummaryCard title="Income" content={income}>
+      <SummaryCard title="Income" content={formatCurrency(income)}>
         <TrendingUp color="var(--pico-color-green-500)" size={16} slot="icon" />
       </SummaryCard>
-      <SummaryCard title="Expense" content={expense}>
+      <SummaryCard title="Expense" content={formatCurrency(expense)}>
         <TrendingDown color="var(--pico-color-red-500)" size={16} slot="icon" />
       </SummaryCard>
-      <SummaryCard title="Balance" content={balance}>
+      <SummaryCard title="Balance" content={formatCurrency(balance)}>
         <IndianRupee color="var(--pico-primary)" size={16} slot="icon" />
       </SummaryCard>
     </div>
+    <CategoryChart transactions={transactions} client:only="svelte" />
     <TransactionTable transactions={transactions} client:only="svelte" />
   </main>
 </Layout>
