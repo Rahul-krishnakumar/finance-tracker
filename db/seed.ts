@@ -43,7 +43,9 @@ export default async function seed() {
   const validTransactions = transactionData
     .map((transaction, index) => {
       const transactionDate = dayjs(transaction.date);
-      const amount = parseFloat(transaction.amount.replace(/[₹,]/g, "").trim());
+      const amount = parseFloat(
+        String(transaction.amount).replace(/[₹,]/g, "").trim(),
+      );
 
       if (!transactionDate.isValid() || isNaN(amount)) {
         console.error(

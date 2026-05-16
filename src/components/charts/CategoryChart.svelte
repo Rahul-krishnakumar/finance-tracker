@@ -33,7 +33,8 @@
     tooltip: {
       trigger: "item",
       axisPointer: { type: "none" },
-      formatter: (params: any) => chartTooltipFormatter(params.value.category, params.value.amount),
+      formatter: (params: any) =>
+        chartTooltipFormatter(params.value.category, params.value.amount),
     },
     dataset: {
       source: categoryTransactions,

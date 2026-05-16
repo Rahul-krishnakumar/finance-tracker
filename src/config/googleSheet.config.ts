@@ -1,4 +1,4 @@
-import type { GoogleSheetConfig } from "../types/GoogleSheetConfig";
+import type { GoogleSheetConfig } from "../types/GooglesheetConfig";
 
 export const googleSheetConfig: GoogleSheetConfig = {
   expense: {

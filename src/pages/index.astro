@@ -7,13 +7,17 @@ import TransactionTable from "../components/TransactionTable.svelte";
 import { db, Transaction, sql, Configuration, eq } from "astro:db";
 import { IndianRupee, TrendingUp, TrendingDown } from "@lucide/svelte";
 import { formatCurrency, roundCurrency } from "../lib/utils";
+import type { Transaction as ITransaction } from "../types/Transaction";
 
-const transactions = await db.select().from(Transaction);
+const transactions = (await db.select().from(Transaction)).map((t) => ({
+  ...t,
+  date: t.date.toISOString(),
+})) as unknown as ITransaction[];
 
 const stats = await db
   .select({
-    income: sql`SUM(CASE WHEN type = 'income' THEN amount ELSE 0 END)`,
-    expense: sql`SUM(CASE WHEN type = 'expense' THEN amount ELSE 0 END)`,
+    income: sql<number>`SUM(CASE WHEN type = 'income' THEN amount ELSE 0 END)`,
+    expense: sql<number>`SUM(CASE WHEN type = 'expense' THEN amount ELSE 0 END)`,
   })
   .from(Transaction);
 

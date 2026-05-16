@@ -15,7 +15,6 @@
   } from "echarts/core";
   import { CanvasRenderer } from "echarts/renderers";
   import { onDestroy, onMount } from "svelte";
-  import { formatCurrency } from "../../lib/utils";
 
   const charts = [BarChart, LineChart, PieChart];
 

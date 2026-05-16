@@ -1,13 +1,17 @@
 export interface Transaction {
   id: string;
   date: string;
-  amount: string;
+  amount: number;
   description: string;
   category: string;
   type: TransactionType;
 }
 
-export type TransactionSheetField = keyof Omit<Transaction, "id" | "type">;
+export type TransactionSheetField =
+  | "date"
+  | "amount"
+  | "description"
+  | "category";
 
 export enum TransactionType {
   INCOME = "income",
