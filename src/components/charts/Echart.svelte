@@ -2,6 +2,7 @@
   import { BarChart, LineChart, PieChart } from "echarts/charts";
   import {
     DatasetComponent,
+    DataZoomComponent,
     GridComponent,
     TitleComponent,
     TooltipComponent,
@@ -23,6 +24,7 @@
     DatasetComponent,
     TooltipComponent,
     TitleComponent,
+    DataZoomComponent,
   ];
 
   use([...charts, ...echartComponents, CanvasRenderer]);

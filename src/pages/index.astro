@@ -8,11 +8,11 @@ import { db, Transaction, sql, Configuration, eq } from "astro:db";
 import { IndianRupee, TrendingUp, TrendingDown } from "@lucide/svelte";
 import { formatCurrency, roundCurrency } from "../lib/utils";
 import type { Transaction as ITransaction } from "../types/Transaction";
+import SpendingTrendsChart from "../components/charts/SpendingTrendsChart.svelte";
 
-const transactions = (await db.select().from(Transaction)).map((t) => ({
-  ...t,
-  date: t.date.toISOString(),
-})) as unknown as ITransaction[];
+const transactions = (await db
+  .select()
+  .from(Transaction)) as unknown as ITransaction[];
 
 const stats = await db
   .select({
@@ -45,19 +45,29 @@ const balance = roundCurrency(openingBalance + income - expense);
         <IndianRupee color="var(--pico-primary)" size={16} slot="icon" />
       </SummaryCard>
     </div>
-    <CategoryChart transactions={transactions} client:only="svelte" />
+    <div class="charts">
+      <CategoryChart transactions={transactions} client:only="svelte" />
+      <SpendingTrendsChart transactions={transactions} client:only="svelte" />
+    </div>
     <TransactionTable transactions={transactions} client:only="svelte" />
   </main>
 </Layout>
 
 <style>
   .summary {
-    display: flex;
-    align-items: center;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
     gap: 1rem;
+    margin-bottom: 1rem;
 
     article {
-      flex: 1;
+      margin-block: 0;
     }
+  }
+
+  .charts {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+    gap: 1rem;
   }
 </style>
